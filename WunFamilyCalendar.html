@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wun Family Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F0; --card: #FFFFFF; --border: rgba(0,0,0,0.08);
+    --text: #1a1a1a; --muted: #888; --subtle: #f0ede8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .app { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+  .header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px; }
+  .header-left h1 { font-family: 'DM Serif Display', serif; font-size: 32px; font-weight: 400; line-height: 1; }
+  .header-left p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .nav-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--card); border: 1px solid var(--border); cursor: pointer; font-size: 18px; color: var(--muted); display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .nav-btn:hover { background: var(--text); color: #fff; border-color: var(--text); }
+  .month-label { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text); min-width: 160px; text-align: center; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .leg-pill { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: opacity 0.2s; border: 1px solid transparent; user-select: none; }
+  .leg-pill.off { opacity: 0.3; }
+  .leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .leg-name { font-size: 12px; font-weight: 500; }
+  .cal-card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+  .day-labels { display: grid; grid-template-columns: repeat(7, 1fr); padding: 12px 16px 8px; border-bottom: 1px solid var(--border); }
+  .day-label { text-align: center; font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 8px 12px 16px; }
+  .cal-cell { min-height: 80px; padding: 6px 4px; border-radius: 8px; transition: background 0.1s; }
+  .cal-cell:hover { background: var(--subtle); }
+  .cal-cell.other { opacity: 0.3; }
+  .cal-cell.weekend { background: rgba(0,0,0,0.015); }
+  .day-n { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 4px; display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; }
+  .cal-cell.today .day-n { background: var(--text); color: #fff; border-radius: 50%; }
+  .ev-pill { font-size: 9px; padding: 2px 5px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; font-weight: 500; }
+  .more-tag { font-size: 9px; color: var(--muted); }
+  .bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 580px) { .bottom { grid-template-columns: 1fr; } }
+  .panel-card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); padding: 20px; }
+  .panel-title { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+  .ev-row { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); align-items: flex-start; }
+  .ev-date-col { min-width: 38px; }
+  .ev-day { font-size: 10px; color: var(--muted); }
+  .ev-num { font-size: 20px; font-weight: 300; color: var(--text); line-height: 1; }
+  .ev-bar { width: 3px; border-radius: 2px; height: 36px; flex-shrink: 0; margin-top: 2px; }
+  .ev-info { flex: 1; min-width: 0; }
+  .ev-title { font-size: 13px; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ev-meta { font-size: 11px; margin-top: 2px; }
+  .ev-loc { font-size: 11px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .send-tip { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 14px 18px; display: flex; align-items: center; gap: 12px; }
+  .tip-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--subtle); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+  .tip-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .tip-text strong { color: var(--text); }
+  .status-bar { text-align: right; font-size: 11px; color: var(--muted); margin-top: 12px; }
+  .refresh-btn { background: none; border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--muted); cursor: pointer; margin-left: 8px; font-family: inherit; }
+  .refresh-btn:hover { background: var(--subtle); }
+  .loading-msg { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; grid-column: 1 / -1; }
+  .empty-msg { text-align: center; padding: 20px; color: var(--muted); font-size: 13px; }
+  .error-msg { background: #FCEBEB; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #791F1F; grid-column: 1 / -1; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <h1>Wun Family</h1>
+      <p id="status-text">Loading calendar...</p>
+    </div>
+    <div class="header-right">
+      <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+      <div class="month-label" id="month-label"></div>
+      <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+    </div>
+  </div>
+  <div class="legend" id="legend"></div>
+  <div class="cal-card">
+    <div class="day-labels">
+      <div class="day-label">Sun</div><div class="day-label">Mon</div><div class="day-label">Tue</div>
+      <div class="day-label">Wed</div><div class="day-label">Thu</div><div class="day-label">Fri</div>
+      <div class="day-label">Sat</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"><div class="loading-msg">Connecting to your calendar...</div></div>
+  </div>
+  <div class="bottom">
+    <div class="panel-card">
+      <div class="panel-title">Upcoming events</div>
+      <div id="upcoming-list"><div class="empty-msg">Loading...</div></div>
+    </div>
+    <div class="panel-card">
+      <div class="panel-title">Today</div>
+      <div id="today-list"><div class="empty-msg">Loading...</div></div>
+    </div>
+  </div>
+  <div class="send-tip">
+    <div class="tip-icon">&#9993;</div>
+    <div class="tip-text">
+      <strong>Add an event:</strong> Email <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="91e6e4fff7f0fcf8fde8a0a8a1a0d1f6fcf0f8fdbff2fefc">[email&#160;protected]</a></strong> with subject <strong>"Add to calendar"</strong> and describe it naturally. Appears within 15 minutes.
+    </div>
+  </div>
+  <div class="status-bar">
+    <span id="status-bar"></span>
+    <button class="refresh-btn" onclick="fetchEvents()">&#8635; Refresh</button>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwQD2zQrfg6XD_GhH4P_oXakSz15rUJYfUUOrl9XcFoCIsIoQ7i1FoLTUI2PtwGcOVq/exec';
+const SGT_OFFSET = 8 * 60; // Singapore is UTC+8
+
+const MEMBERS = {
+  max:    { color:'#38BDF8', bg:'#E0F6FE', textColor:'#0369A1', label:'Max' },
+  liam:   { color:'#EAB308', bg:'#FEF9C3', textColor:'#854D0E', label:'Liam' },
+  harvey: { color:'#22C55E', bg:'#DCFCE7', textColor:'#166534', label:'Harvey' },
+  mama:   { color:'#EC4899', bg:'#FCE7F3', textColor:'#9D174D', label:'Mama' },
+  papa:   { color:'#1E3A8A', bg:'#DBEAFE', textColor:'#1E3A8A', label:'Papa' },
+  family: { color:'#F97316', bg:'#FFEDD5', textColor:'#9A3412', label:'Family' },
+};
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const today = new Date();
+let curYear = today.getFullYear();
+let curMonth = today.getMonth();
+let allEvents = [];
+let activeFilters = new Set(Object.keys(MEMBERS));
+
+// Convert UTC ISO string to SGT date components
+function toSGT(isoStr) {
+  const d = new Date(isoStr);
+  const sgtMs = d.getTime() + SGT_OFFSET * 60000;
+  const sgt = new Date(sgtMs);
+  return { year: sgt.getUTCFullYear(), month: sgt.getUTCMonth(), date: sgt.getUTCDate(), hours: sgt.getUTCHours(), minutes: sgt.getUTCMinutes(), day: sgt.getUTCDay() };
+}
+
+function detectMember(title) {
+  const t = title.toLowerCase();
+  if (t.includes('[max]') || t.includes('max')) return 'max';
+  if (t.includes('[liam]') || t.includes('liam')) return 'liam';
+  if (t.includes('[harvey]') || t.includes('harvey')) return 'harvey';
+  if (t.includes('[mama]') || t.includes('mama') || t.includes('mum') || t.includes('leona')) return 'mama';
+  if (t.includes('[papa]') || t.includes('papa') || t.includes('dad') || t.includes('raphael') || t.includes('raph')) return 'papa';
+  return 'family';
+}
+
+function buildLegend() {
+  const el = document.getElementById('legend');
+  Object.entries(MEMBERS).forEach(([key, m]) => {
+    const pill = document.createElement('div');
+    pill.className = 'leg-pill';
+    pill.style.background = m.bg;
+    pill.style.borderColor = m.color + '50';
+    pill.innerHTML = '<div class="leg-dot" style="background:' + m.color + '"></div><span class="leg-name" style="color:' + m.textColor + '">' + m.label + '</span>';
+    pill.onclick = () => {
+      if (activeFilters.has(key)) activeFilters.delete(key); else activeFilters.add(key);
+      pill.classList.toggle('off', !activeFilters.has(key));
+      renderCalendar();
+    };
+    el.appendChild(pill);
+  });
+}
+
+function fetchEvents() {
+  document.getElementById('status-text').textContent = 'Loading...';
+  document.getElementById('cal-grid').innerHTML = '<div class="loading-msg">Connecting to your calendar...</div>';
+  document.getElementById('month-label').textContent = MONTHS[curMonth] + ' ' + curYear;
+
+  const cbName = 'gcb_' + Date.now();
+  const url = WEB_APP_URL + '?month=' + (curMonth+1) + '&year=' + curYear + '&callback=' + cbName;
+
+  const timer = setTimeout(() => {
+    cleanup();
+    document.getElementById('cal-grid').innerHTML = '<div class="error-msg">Could not load calendar. Please check your internet connection and click Refresh.</div>';
+    document.getElementById('status-text').textContent = 'Connection error';
+  }, 15000);
+
+  function cleanup() {
+    clearTimeout(timer);
+    delete window[cbName];
+    const s = document.getElementById('_gcbscript');
+    if (s) s.remove();
+  }
+
+  window[cbName] = function(data) {
+    cleanup();
+    allEvents = (data.events || []).map(ev => {
+      const sgt = toSGT(ev.start);
+      return {
+        title: ev.title,
+        start: ev.start,
+        location: ev.location || '',
+        allDay: ev.allDay,
+        member: detectMember(ev.title),
+        sgt: sgt
+      };
+    });
+    const t = new Date().toLocaleTimeString('en-SG', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('status-text').textContent = allEvents.length + ' events loaded';
+    document.getElementById('status-bar').textContent = 'Last refreshed ' + t;
+    renderCalendar();
+  };
+
+  const old = document.getElementById('_gcbscript');
+  if (old) old.remove();
+  const script = document.createElement('script');
+  script.id = '_gcbscript';
+  script.src = url;
+  script.onerror = () => {
+    cleanup();
+    document.getElementById('cal-grid').innerHTML = '<div class="error-msg">Could not load calendar. Click Refresh to try again.</div>';
+    document.getElementById('status-text').textContent = 'Connection error';
+  };
+  document.body.appendChild(script);
+}
+
+function eventsForDay(filtered, y, m, d) {
+  return filtered.filter(ev => ev.sgt.year === y && ev.sgt.month === m && ev.sgt.date === d);
+}
+
+function renderCalendar() {
+  document.getElementById('month-label').textContent = MONTHS[curMonth] + ' ' + curYear;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(curYear, curMonth, 1).getDay();
+  const daysInMonth = new Date(curYear, curMonth + 1, 0).getDate();
+  const daysInPrev = new Date(curYear, curMonth, 0).getDate();
+  const filtered = allEvents.filter(ev => activeFilters.has(ev.member));
+  const todaySGT = toSGT(new Date().toISOString());
+
+  let cells = [];
+  for (let i = firstDay - 1; i >= 0; i--) cells.push({d: daysInPrev - i, cur: false});
+  for (let d = 1; d <= daysInMonth; d++) cells.push({d, cur: true});
+  while (cells.length % 7 !== 0) cells.push({d: cells.length - firstDay - daysInMonth + 1, cur: false});
+
+  cells.forEach(({d, cur}, idx) => {
+    const cell = document.createElement('div');
+    const isToday = cur && d === todaySGT.date && curMonth === todaySGT.month && curYear === todaySGT.year;
+    const dow = idx % 7;
+    const isWeekend = dow === 0 || dow === 6;
+    cell.className = 'cal-cell' + (!cur ? ' other' : '') + (isToday ? ' today' : '') + (isWeekend ? ' weekend' : '');
+
+    const dn = document.createElement('div');
+    dn.className = 'day-n';
+    dn.textContent = d;
+    cell.appendChild(dn);
+
+    if (cur) {
+      const evs = eventsForDay(filtered, curYear, curMonth, d);
+      evs.slice(0, 3).forEach(ev => {
+        const m2 = MEMBERS[ev.member];
+        const pill = document.createElement('div');
+        pill.className = 'ev-pill';
+        pill.style.background = m2.bg;
+        pill.style.color = m2.textColor;
+        pill.title = ev.title;
+        pill.textContent = ev.title.replace(/\[.*?\]\s*/g, '');
+        cell.appendChild(pill);
+      });
+      if (evs.length > 3) {
+        const more = document.createElement('div');
+        more.className = 'more-tag';
+        more.textContent = '+' + (evs.length - 3) + ' more';
+        cell.appendChild(more);
+      }
+    }
+    grid.appendChild(cell);
+  });
+
+  renderUpcoming(filtered, todaySGT);
+  renderToday(filtered, todaySGT);
+}
+
+function renderUpcoming(filtered, todaySGT) {
+  const list = document.getElementById('upcoming-list');
+  const upcoming = filtered.filter(ev => {
+    const s = ev.sgt;
+    if (s.year !== curYear || s.month !== curMonth) return false;
+    if (s.year > todaySGT.year) return true;
+    if (s.year === todaySGT.year && s.month > todaySGT.month) return true;
+    if (s.year === todaySGT.year && s.month === todaySGT.month && s.date >= todaySGT.date) return true;
+    return false;
+  }).sort((a,b) => new Date(a.start) - new Date(b.start)).slice(0, 8);
+
+  if (!upcoming.length) { list.innerHTML = '<div class="empty-msg">No upcoming events this month</div>'; return; }
+  list.innerHTML = upcoming.map(ev => {
+    const m2 = MEMBERS[ev.member];
+    const s = ev.sgt;
+    const timeStr = ev.allDay ? 'All day' : (String(s.hours).padStart(2,'0') + ':' + String(s.minutes).padStart(2,'0'));
+    const clean = ev.title.replace(/\[.*?\]\s*/g, '');
+    return '<div class="ev-row">' +
+      '<div class="ev-date-col"><div class="ev-day">' + DAYS[s.day] + '</div><div class="ev-num">' + s.date + '</div></div>' +
+      '<div class="ev-bar" style="background:' + m2.color + '"></div>' +
+      '<div class="ev-info">' +
+        '<div class="ev-title">' + clean + '</div>' +
+        '<div class="ev-meta" style="color:' + m2.color + '">' + m2.label + ' · ' + timeStr + '</div>' +
+        (ev.location ? '<div class="ev-loc">' + ev.location + '</div>' : '') +
+      '</div></div>';
+  }).join('');
+}
+
+function renderToday(filtered, todaySGT) {
+  const list = document.getElementById('today-list');
+  const todayEvs = filtered.filter(ev => {
+    const s = ev.sgt;
+    return s.year === todaySGT.year && s.month === todaySGT.month && s.date === todaySGT.date;
+  });
+  if (!todayEvs.length) { list.innerHTML = '<div class="empty-msg">Nothing on today</div>'; return; }
+  list.innerHTML = todayEvs.map(ev => {
+    const m2 = MEMBERS[ev.member];
+    const s = ev.sgt;
+    const timeStr = ev.allDay ? 'All day' : (String(s.hours).padStart(2,'0') + ':' + String(s.minutes).padStart(2,'0'));
+    const clean = ev.title.replace(/\[.*?\]\s*/g, '');
+    return '<div class="ev-row">' +
+      '<div class="ev-bar" style="background:' + m2.color + '"></div>' +
+      '<div class="ev-info">' +
+        '<div class="ev-title">' + clean + '</div>' +
+        '<div class="ev-meta" style="color:' + m2.color + '">' + m2.label + ' · ' + timeStr + '</div>' +
+        (ev.location ? '<div class="ev-loc">' + ev.location + '</div>' : '') +
+      '</div></div>';
+  }).jo
