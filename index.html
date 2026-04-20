@@ -84,7 +84,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   .nav-btn{width:30px;height:30px;font-size:15px;}
   .cal-card{display:none;}
   .mobile-agenda{display:block;}
-  .bottom{display:none;}
+  .bottom{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px;}
+  .today-panel{display:none;}
 }
 </style>
 </head>
@@ -128,7 +129,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="panel-title">Upcoming events</div>
       <div id="upcoming-list"><div class="empty-msg">Loading...</div></div>
     </div>
-    <div class="panel-card">
+    <div class="panel-card today-panel">
       <div class="panel-title">Today</div>
       <div id="today-list"><div class="empty-msg">Loading...</div></div>
     </div>
@@ -367,7 +368,7 @@ function renderUpcoming(filtered,ts){
     var s=ev.sgt;
     if(s.year!==curYear||s.month!==curMonth)return false;
     return s.year>ts.year||(s.year===ts.year&&s.month>ts.month)||(s.year===ts.year&&s.month===ts.month&&s.date>=ts.date);
-  }).sort(function(a,b){return new Date(a.start)-new Date(b.start);}).slice(0,8);
+  }).sort(function(a,b){return new Date(a.start)-new Date(b.start);}).slice(0,12);
   if(!upcoming.length){list.innerHTML='<div class="empty-msg">No upcoming events this month</div>';return;}
   list.innerHTML=upcoming.map(function(ev){
     var m2=MEMBERS[ev.member],s=ev.sgt;
