@@ -217,11 +217,18 @@ async function fetchEvents(){
     document.getElementById('cal-grid').innerHTML='<div class="loading-msg">Connecting to your calendar...</div>';
   }
   try{
+    // Fetch current month
     var res=await fetch(WEB_APP_URL+'?month='+(curMonth+1)+'&year='+curYear,{redirect:'follow'});
     if(!res.ok)throw new Error('HTTP '+res.status);
     var data=await res.json();
-    saveToCache(data.events||[]);
-    allEvents=mapEvents(data.events||[]);
+    var events=data.events||[];
+    // Also fetch next month for the upcoming panel
+    var nextMonth=curMonth+1>11?0:curMonth+1;
+    var nextYear=curMonth+1>11?curYear+1:curYear;
+    var res2=await fetch(WEB_APP_URL+'?month='+(nextMonth+1)+'&year='+nextYear,{redirect:'follow'});
+    if(res2.ok){var data2=await res2.json();events=events.concat(data2.events||[]);}
+    saveToCache(events);
+    allEvents=mapEvents(events);
     var t=new Date().toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('status-text').textContent=allEvents.length+' events loaded';
     document.getElementById('status-bar').textContent='Last refreshed '+t;
@@ -364,12 +371,13 @@ function renderMobAgenda(filtered,selectedDay){
 
 function renderUpcoming(filtered,ts){
   var list=document.getElementById('upcoming-list');
+  var now=new Date(curYear,curMonth,ts.date);
+  var future=new Date(now.getTime()+30*24*60*60*1000);
   var upcoming=filtered.filter(function(ev){
-    var s=ev.sgt;
-    if(s.year!==curYear||s.month!==curMonth)return false;
-    return s.year>ts.year||(s.year===ts.year&&s.month>ts.month)||(s.year===ts.year&&s.month===ts.month&&s.date>=ts.date);
+    var evDate=new Date(ev.sgt.year,ev.sgt.month,ev.sgt.date);
+    return evDate>=now&&evDate<=future;
   }).sort(function(a,b){return new Date(a.start)-new Date(b.start);}).slice(0,12);
-  if(!upcoming.length){list.innerHTML='<div class="empty-msg">No upcoming events this month</div>';return;}
+  if(!upcoming.length){list.innerHTML='<div class="empty-msg">No upcoming events in the next 30 days</div>';return;}
   list.innerHTML=upcoming.map(function(ev){
     var m2=MEMBERS[ev.member],s=ev.sgt;
     var timeStr=ev.allDay?'All day':(String(s.hours).padStart(2,'0')+':'+String(s.minutes).padStart(2,'0'));
