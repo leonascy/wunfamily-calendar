@@ -337,9 +337,9 @@ function renderMobAgenda(filtered,selectedDay){
     const s=ev.sgt,m2=MEMBERS[ev.member];
     const timeStr=ev.allDay?'All day':(String(s.hours).padStart(2,'0')+':'+String(s.minutes).padStart(2,'0'));
     const clean=ev.title.replace(/\[.*?\]\s*/g,'');
-    if(!selectedDay&&s.date+'!==lastDate'){
+    if(!selectedDay&&String(s.date)!==lastDate){
       html+='<div class="mob-agenda-date-header" id="mob-date-'+s.date+'"><div class="mob-agenda-date-label">'+DAYS[s.day]+', '+s.date+' '+MONTHS[curMonth]+'</div></div>';
-      lastDate=s.date+'';
+      lastDate=String(s.date);
     }
     html+='<div class="mob-agenda-row"><div class="mob-agenda-bar" style="background:'+m2.color+'"></div><div class="mob-agenda-info"><div class="mob-agenda-title">'+clean+'</div><div class="mob-agenda-meta" style="color:'+m2.color+'">'+m2.label+' · '+timeStr+'</div></div></div>';
   });
