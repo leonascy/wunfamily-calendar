@@ -142,7 +142,17 @@ const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const today=new Date();
 let curYear=today.getFullYear(),curMonth=today.getMonth(),allEvents=[],activeFilters=new Set(Object.keys(MEMBERS));
 
-function toSGT(iso){const d=new Date(iso),s=new Date(d.getTime()+SGT*60000);return{year:s.getUTCFullYear(),month:s.getUTCMonth(),date:s.getUTCDate(),hours:s.getUTCHours(),minutes:s.getUTCMinutes(),day:s.getUTCDay()};}
+function toSGT(iso, allDay){
+  const d=new Date(iso);
+  // All-day events from Google Calendar are stored as UTC midnight
+  // Use UTC date directly to avoid timezone shift
+  if(allDay){
+    return{year:d.getUTCFullYear(),month:d.getUTCMonth(),date:d.getUTCDate(),hours:0,minutes:0,day:d.getUTCDay()};
+  }
+  // Timed events: convert to SGT (UTC+8)
+  const s=new Date(d.getTime()+SGT*60000);
+  return{year:s.getUTCFullYear(),month:s.getUTCMonth(),date:s.getUTCDate(),hours:s.getUTCHours(),minutes:s.getUTCMinutes(),day:s.getUTCDay()};
+}
 
 function detectMember(t){
   const tl = t.toLowerCase();
@@ -186,7 +196,7 @@ async function fetchEvents(){
   // Show cached data instantly if available
   const cached = loadFromCache();
   if (cached) {
-    allEvents = cached.map(ev => ({...ev, member: detectMember(ev.title), sgt: toSGT(ev.start)}));
+    allEvents = cached.map(ev => ({...ev, member: detectMember(ev.title), sgt: toSGT(ev.start, ev.allDay)}));
     document.getElementById('status-text').textContent = allEvents.length + ' events · updating...';
     renderCalendar();
   } else {
@@ -200,7 +210,7 @@ async function fetchEvents(){
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
     saveToCache(data.events || []);
-    allEvents=(data.events||[]).map(ev=>({...ev,member:detectMember(ev.title),sgt:toSGT(ev.start)}));
+    allEvents=(data.events||[]).map(ev=>({...ev,member:detectMember(ev.title),sgt:toSGT(ev.start,ev.allDay)}));
     const t=new Date().toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('status-text').textContent=allEvents.length+' events loaded';
     document.getElementById('status-bar').textContent='Last refreshed '+t;
