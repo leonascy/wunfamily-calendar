@@ -141,7 +141,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="status-bar"><span id="status-bar"></span><button class="refresh-btn" onclick="fetchEvents()">&#8635; Refresh</button></div>
 </div>
 <script>
-var WEB_APP_URL='https://script.google.com/macros/s/AKfycbzFzJT-nmACCcsBXfJqWFS0VEPrQ3NHJ4BtdymsO-8MEp9DB5_3uanDqwFEAbkXaGY8/exec';
+var WEB_APP_URL='https://script.google.com/macros/s/AKfycbwJW04TUiOdYXyCz3JAP8R52zaZnFNTKwtmc0zU_vPOozcf5hlvnaaBync42OSDEECu/exec';
 var SGT=8*60;
 var MEMBERS={
   max:{color:'#38BDF8',bg:'#E0F6FE',textColor:'#0369A1',label:'Max'},
@@ -162,10 +162,28 @@ function loadFromCache(){try{var r=localStorage.getItem(getCacheKey());if(!r)ret
 function saveToCache(ev){try{localStorage.setItem(getCacheKey(),JSON.stringify({ts:Date.now(),events:ev}));}catch(e){}}
 
 function toSGT(iso,allDay){
+  // Apps Script now returns times already in SGT (+08:00) or as YYYY-MM-DDT00:00:00Z for all-day
+  // Parse directly without any offset conversion
   var d=new Date(iso);
-  if(allDay){return{year:d.getUTCFullYear(),month:d.getUTCMonth(),date:d.getUTCDate(),hours:0,minutes:0,day:d.getUTCDay()};}
-  var s=new Date(d.getTime()+SGT*60000);
-  return{year:s.getUTCFullYear(),month:s.getUTCMonth(),date:s.getUTCDate(),hours:s.getUTCHours(),minutes:s.getUTCMinutes(),day:s.getUTCDay()};
+  if(allDay){
+    // All-day: use UTC date directly (stored as midnight UTC = correct SGT date)
+    return{year:d.getUTCFullYear(),month:d.getUTCMonth(),date:d.getUTCDate(),hours:0,minutes:0,day:d.getUTCDay()};
+  }
+  // Timed events: now sent as local SGT time with +08:00 offset
+  // new Date() correctly parses +08:00 and gives us the right local time
+  // Use local date methods since the offset is baked in
+  var sgt=new Date(iso);
+  // Extract the date parts from the ISO string directly to avoid browser TZ interference
+  var parts=iso.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if(parts){
+    var yr=parseInt(parts[1]),mo=parseInt(parts[2])-1,dt=parseInt(parts[3]);
+    var hr=parseInt(parts[4]),mn=parseInt(parts[5]);
+    // Get day of week using UTC date at noon to avoid DST issues
+    var dayOfWeek=new Date(yr,mo,dt,12,0,0).getDay();
+    return{year:yr,month:mo,date:dt,hours:hr,minutes:mn,day:dayOfWeek};
+  }
+  // Fallback
+  return{year:sgt.getFullYear(),month:sgt.getMonth(),date:sgt.getDate(),hours:sgt.getHours(),minutes:sgt.getMinutes(),day:sgt.getDay()};
 }
 
 function detectMember(t){
